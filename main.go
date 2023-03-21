@@ -1,37 +1,36 @@
 package main
 
 import (
-	"assignTele/config"
-	"assignTele/controllers"
-	"assignTele/helper"
-	"assignTele/routes"
-	"assignTele/service"
-	"assignTele/utility"
-	"fmt"
-	"net/http"
+	"log"
+	"os"
 
-	"github.com/julienschmidt/httprouter"
+	routes "blogAPI/routes"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	fmt.Println("Starting Server!")
+	err := godotenv.Load(".env")
 
-	db := config.DatabaseConnection()
-	// database
-	blogRepo := utility.NewBlogsRepo(db)
-	//service
-	blogService := service.NewBlogServiceImpl(blogRepo)
-	// controller
-	BlogControllers := controllers.NewBlogsControl(blogService)
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	port := os.Getenv("PORT")
 
-	// routes
-	routes := routes.NewRoutes(BlogControllers)
-	routes.GET("/", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		fmt.Fprint(w, "Welcome Home!")
+	if port == "" {
+		port = "8000"
+	}
+
+	router := gin.New()
+	router.Use(gin.Logger())
+
+	routes.AuthRoutes(router)
+	routes.UserRoutes(router)
+
+	router.GET("/api-1", func(c *gin.Context) {
+		c.JSON(200, gin.H{"success": "Access granted for api's has been granted"})
 	})
 
-	server := http.Server{Addr: "localhost:3333", Handler: routes}
-
-	err := server.ListenAndServe()
-	helper.PanicIfError(err)
+	router.Run(":" + port)
 }
