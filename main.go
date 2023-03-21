@@ -1,7 +1,12 @@
 package main
 
 import (
+	"assignTele/config"
+	"assignTele/controllers"
 	"assignTele/helper"
+	"assignTele/routes"
+	"assignTele/service"
+	"assignTele/utility"
 	"fmt"
 	"net/http"
 
@@ -9,8 +14,18 @@ import (
 )
 
 func main() {
+	fmt.Println("Starting Server!")
 
-	routes := httprouter.New()
+	db := config.DatabaseConnection()
+	// database
+	blogRepo := utility.NewBlogsRepo(db)
+	//service
+	blogService := service.NewBlogServiceImpl(blogRepo)
+	// controller
+	BlogControllers := controllers.NewBlogsControl(blogService)
+
+	// routes
+	routes := routes.NewRoutes(BlogControllers)
 	routes.GET("/", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		fmt.Fprint(w, "Welcome Home!")
 	})
